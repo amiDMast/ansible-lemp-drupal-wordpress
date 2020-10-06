@@ -1,0 +1,48 @@
+---
+- name: install ondrej/php repository
+  apt_repository: repo='ppa:ondrej/php' state=present update_cache=yes
+
+- name: install php{{ php_ver }} with all modules
+  package: name={{ item }} state=present
+  with_items:
+    - php{{ php_ver }}
+    - php{{ php_ver }}-curl
+    - php{{ php_ver }}-gd
+    - php{{ php_ver }}-cli
+    - php{{ php_ver }}-mysql
+    - php{{ php_ver }}-xml
+    - php{{ php_ver }}-mbstring
+    - php{{ php_ver }}-fpm
+    - php{{ php_ver }}-json
+    - php{{ php_ver }}-intl
+    - php{{ php_ver }}-zip
+
+
+- name: start and enable service
+  service: name=php{{ php_ver }}-fpm state=started enabled=yes
+
+- name: setting timezone in php.ini
+  lineinfile:
+    path: /etc/php/{{ php_ver }}/fpm/php.ini
+    regexp: ^;date.timezone or ^date.timezone
+    line: date.timezone = {{ date_timezone }}
+    state: present
+
+- name: setting timezone in php.ini
+  lineinfile:
+    path: /etc/php/{{ php_ver }}/fpm/php.ini
+    regexp: ^memory_limit
+    line: memory_limit = {{ memory_limit }}
+    state: present
+
+- name: delete default www.conf 
+  file: path=/etc/php/{{ php_ver }}/fpm/pool.d/www.conf state=absent
+
+- name: create php-pool conf
+  template:
+    src: php.fpm.j2
+    dest: /etc/php/{{ php_ver }}/fpm/pool.d/{{ pool_name }}.conf
+
+
+- name: restart php{{ php_ver }}-fpm
+  service: name=php{{ php_ver }}-fpm state=restarted

@@ -1,0 +1,41 @@
+[mysqld]
+user                           = mysql
+pid-file                       = /run/mysqld/mysqld.pid
+basedir                        = /usr
+datadir                        = /var/lib/mysql
+tmpdir                         = /tmp
+lc-messages-dir                = /usr/share/mysql
+lc-messages                    = en_US
+skip-external-locking
+bind-address                   = 127.0.0.1
+key_buffer_size                = 512M
+thread_stack                   = 192K
+thread_cache_size              = 8
+myisam_recover_options         = backup,force
+table_definition_cache         = 4096
+max_heap_table_size            = 64M
+tmp_table_size                 = 64M
+max_connections                = 505
+max_user_connections           = 500
+max_allowed_packet             = 16M
+thread_cache_size              = 32
+expire_logs_days               = 7
+max_binlog_size                = 128M
+character-set-server           = utf8
+collation-server               = utf8_general_ci
+
+
+query_cache_type = 1
+query_cache_limit = 256K
+query_cache_min_res_unit = 2k
+query_cache_size = 64M
+
+
+
+
+[myisamchk]
+key_buffer                     = 512M
+sort_buffer_size               = 512M
+read_buffer                    = 8M
+write_buffer                   = 8M
+

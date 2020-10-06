@@ -1,0 +1,74 @@
+---
+- name: Install software-properties-common
+  apt:
+    name: software-properties-common
+    update_cache: true
+    state: present
+
+
+- name: install mariadb repository
+  shell: curl -sS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash warn=False
+
+
+
+- name: install latest mariadb
+  package: name={{ item }} state=present
+  with_items:
+    - mariadb-server
+    - libmysqlclient-dev
+    - gcc
+    - python3-dev
+
+- name: install the latest pip
+  shell: curl https://bootstrap.pypa.io/get-pip.py | python3 warn=False
+
+- name: install python MySQL client
+  pip:
+    name:
+      - setuptools
+      - mysqlclient
+    state: latest
+
+- name: update mysql root password
+  mysql_user: name=root host={{ item }} password={{ mysql_root_pass }}
+  with_items:
+   - 127.0.0.1
+   - ::1
+   - localhost
+
+
+- name: copy .my.cnf
+  template:
+    src: my.cnf.j2
+    dest: /root/.my.cnf
+    mode: 0600
+
+
+- name: remove web dir contents
+  file: path=/etc/mysql/mariadb.conf.d/50-server.cnf state=absent
+
+- name: MariaDB server customizations on Ubuntu >= 18.04
+  template:
+    src: server.cnf.j2
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  when: ansible_distribution_version >= "18.04"
+
+- name: service
+  service: name=mariadb state=started enabled=yes
+
+- meta: flush_handlers
+
+- name: ensure anonymous users are not in the database
+  mysql_user: name='' host={{ item }} state=absent
+  with_items:
+   - 127.0.0.1
+   - ::1
+   - localhost
+
+- name: remove the test database
+  mysql_db: name=test state=absent
+

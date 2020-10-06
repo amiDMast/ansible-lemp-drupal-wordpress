@@ -1,0 +1,11 @@
+---
+- name: LEMP + Drupal
+  hosts: all
+
+  become: yes
+
+  roles:
+  - ansible-lemp-php
+  - ansible-lemp-mariadbase
+  - ansible-lemp-drupal
+  - ansible-lemp-nginx

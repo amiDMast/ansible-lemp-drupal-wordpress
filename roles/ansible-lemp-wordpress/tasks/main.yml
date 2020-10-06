@@ -1,0 +1,88 @@
+---
+- name: Wordpress | Create directory
+  file:
+    path: "{{ site_dir }}"
+    state: directory
+    mode: 0755
+
+- name: Wordpress | Extract archive in {{ site_dir }}
+  unarchive:
+    src: "http://wordpress.org/wordpress-{{ wp_version }}.tar.gz"
+    dest: "{{ site_dir }}"
+    remote_src: yes
+
+- name: Wordpress | Move files from {{ site_dir }}/wordpress to {{ site_dir }}
+  command: cp -rf . "{{ site_dir }}"
+  args:
+    chdir: "{{ site_dir }}/wordpress/"
+
+- name: Wordpress | Remove wordpress dir
+  file:
+    path: "{{ site_dir }}/wordpress/"
+    state: absent
+
+- name: Create mysql database
+  mysql_db:
+    name: "{{ wp_db_name }}"
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Create mysql user
+  mysql_user:
+    name: "{{ wp_db_user }}"
+    password: "{{ wp_db_password }}"
+    priv: '*.*:ALL'
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+
+- name: Wordpress | Fetch random salts for wp-config.php
+  delegate_to: localhost
+  uri:
+    url: https://api.wordpress.org/secret-key/1.1/salt/
+    return_content: yes
+  become: False
+  register: 'wp_salt_array'
+
+- name: set wp_salt fact
+  set_fact:
+    wp_salt: '{{ wp_salt_array.content }}'
+
+- name: Wordpress | Copy wp-config.php file
+  template:
+    src: wp-config.php.j2
+    dest: "{{ site_dir }}/wp-config.php"
+
+- name: Wordpress | Change ownership of installation directory
+  file:
+    path: "{{ site_dir }}"
+    owner: www-data
+    group: www-data
+    state: directory
+    recurse: yes
+
+- name: Check if wp-cli exists
+  stat: path="/usr/local/bin/wp"
+  register: wpcli_exist
+
+- name: Updating wp-cli
+  shell: "/usr/local/bin/wp cli update --yes"
+  when: wpcli_exist.stat.exists
+
+- name: Download wp-cli
+  get_url:
+    url="https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar"
+    dest="/usr/local/bin/wp"
+    force_basic_auth=yes
+    mode=0755
+  when: not wpcli_exist.stat.exists
+
+- name: Configure wia wp cli
+  become_user: www-data
+  shell: 'wp core install --url={{ domain }}  --title="WordPress" --admin_user={{ wp_admin }} --admin_password={{ wp_admin_pass }} --admin_email={{ wp_admin_email  }} --quiet'
+  args:
+    chdir: "{{ site_dir }}"
+
+- name: Configure wia wp cli
+  become_user: www-data
+  shell: 'wp theme activate {{ wp_theme_default }}'
+  args:
+    chdir: "{{ site_dir }}"

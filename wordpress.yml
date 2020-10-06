@@ -1,0 +1,11 @@
+---
+- name: LEMP + WordPress
+  hosts: all
+
+  become: yes
+
+  roles:
+  - ansible-lemp-php
+  - ansible-lemp-mariadbase
+  - ansible-lemp-wordpress
+  - ansible-lemp-nginx

@@ -1,0 +1,21 @@
+---
+# php settings
+web_user: www-data
+web_group: www-data
+php_ver: 7.2
+pool_name: web
+php_child: 8
+
+# mariadb role variables
+mysql_root_pass: VeryStrongPassword
+
+# PHP Variables
+date_timezone: America/Los_Angeles
+memory_limit: 512M
+
+# Let's Encrypt Settings
+# Set it to true if A record exist.
+lets_gen	: true 
+domain		: example.com
+lets_email	: 
+site_dir	: /var/www/web

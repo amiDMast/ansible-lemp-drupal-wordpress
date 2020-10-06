@@ -1,0 +1,15 @@
+[submodule "roles/ansible-lemp-php"]
+	path = roles/ansible-lemp-php
+	url = git@git.youpal.se:devops/ansible-lemp-php.git
+[submodule "roles/ansible-lemp-mariadbase"]
+	path = roles/ansible-lemp-mariadbase
+	url = git@git.youpal.se:devops/ansible-lemp-mariadbase.git
+[submodule "roles/ansible-lemp-drupal"]
+	path = roles/ansible-lemp-drupal
+	url = git@git.youpal.se:devops/ansible-lemp-drupal.git
+[submodule "roles/ansible-lemp-wordpress"]
+	path = roles/ansible-lemp-wordpress
+	url = git@git.youpal.se:devops/ansible-lemp-wordpress.git
+[submodule "roles/ansible-lemp-nginx"]
+	path = roles/ansible-lemp-nginx
+	url = git@git.youpal.se:devops/ansible-lemp-nginx.git

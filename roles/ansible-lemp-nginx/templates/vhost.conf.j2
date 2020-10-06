@@ -1,0 +1,48 @@
+upstream php {
+        server unix:/run/php/{{ pool_name }}-fpm.sock;
+}
+{% if lets_gen == true and domain is defined and lets_email is defined %}
+server {
+    listen 80 default_server;
+    server_name {{ domain }};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name {{ domain }};
+    ssl_certificate           /etc/letsencrypt/live/{{ domain }}/fullchain.pem;
+    ssl_certificate_key       /etc/letsencrypt/live/{{ domain }}/privkey.pem;
+{% else %}
+server {
+    listen 80 default_server;
+{% endif %}
+    server_name {{ domain }};
+    root {{ site_dir }};
+    access_log  /var/log/nginx/{{ domain }}.access.log;
+    error_log /var/log/nginx/{{ domain }}.error.log;
+
+    index index.php;
+
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+     location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+     }
+
+     location / {
+        try_files $uri $uri/ /index.php;
+     }
+
+     location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_intercept_errors on;
+        fastcgi_pass php;
+        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+}

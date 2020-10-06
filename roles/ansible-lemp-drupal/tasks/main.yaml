@@ -1,0 +1,74 @@
+---
+- name: install the latest Composer
+  shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer warn=False
+  args:
+    creates: /usr/local/bin/composer
+
+- name: install git
+  package: name=git state=latest
+
+- name: clone Drush repository
+  git:
+    repo: https://github.com/drush-ops/drush.git
+    version: "9.3.0"
+    dest: /opt/drush
+
+- name: install Drush dependencies with Composer
+  shell: composer install
+  args:
+    chdir: "/opt/drush"
+  ignore_errors: True
+
+- name: create the Drush executable link
+  file:
+    src: /opt/drush/drush
+    dest: /usr/local/bin/drush
+    state: link
+
+- name: create the Drupal install directory
+  file:
+    path: "{{ site_dir }}"
+    state: directory
+
+- name: clone Drupal repository
+  git:
+    repo: http://git.drupal.org/project/drupal.git
+    version: "{{ drupal_version }}"
+    dest: "{{ site_dir }}"
+
+- name: install Drupal dependencies with Composer
+  shell: composer install
+  args:
+    chdir: "{{ site_dir }}"
+    creates: "{{ site_dir }}/vendor/autoload.php"
+
+- name: create database
+  mysql_db: name={{ drupal_db_name }} state=present
+
+- name: grands for database
+  mysql_user: name={{ drupal_db_user }}  password={{ drupal_db_pass }}
+                priv="{{ drupal_db_name }}.*:ALL" state=present host={{ drupal_host }}
+
+- name: install Drupal
+  shell: drush si -y --site-name="{{ drupal_site_name }}" --account-name={{ drupal_admin_username }} --account-pass="{{ drupal_admin_pass }}" --db-url=mysql://{{ drupal_db_user }}:{{ drupal_db_pass }}@{{ drupal_host }}/{{ drupal_db_name }}
+  args:
+    chdir: "{{ site_dir }}"
+
+- name: set proper ownership
+  file:
+    path: "{{ site_dir }}"
+    owner: www-data
+    group: www-data
+    recurse: yes
+
+- name: set permissions on the settings file
+  file:
+    path: "{{ site_dir }}/sites/default/settings.php"
+    mode: 0744
+
+- name: set permissions on files direcotry
+  file:
+    path: "{{ site_dir }}/sites/default/files"
+    mode: 0777
+    state: directory
+    recurse: yes
